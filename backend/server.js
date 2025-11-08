@@ -91,6 +91,12 @@ app.use(cors({
       return callback(null, true);
     }
     
+    // Allow all netlify.app domains for production
+    if (origin && origin.includes('netlify.app')) {
+      console.log("✅ CORS: Allowing Netlify origin:", origin);
+      return callback(null, true);
+    }
+    
     // Check specific allowed origins for production
     if (allowedOrigins.indexOf(origin) !== -1) {
       console.log("✅ CORS: Origin allowed:", origin);
@@ -110,6 +116,25 @@ app.use(cors({
 app.use(bodyParser.json({ limit: "50mb" })); // Increased for profile photos
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 app.use(morgan("dev"));
+
+// ✅ Health check and root routes
+app.get("/", (req, res) => {
+  res.json({ 
+    message: "🚀 OFPRS Backend Server is running!", 
+    status: "active",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development"
+  });
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "healthy", 
+    message: "API is working correctly",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
 
 // ✅ Routes
 console.log("📍 Registering routes...");
