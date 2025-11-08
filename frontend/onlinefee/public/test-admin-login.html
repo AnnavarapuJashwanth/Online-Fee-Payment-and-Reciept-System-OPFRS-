@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login Test - OFPRS</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        input { padding: 8px; margin: 5px; width: 300px; border: 1px solid #ddd; border-radius: 3px; }
+        .log { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 3px; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+        .admin-form { background: #f0f8ff; padding: 15px; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Admin Login Test - OFPRS</h1>
+        <p>Use this page to test admin login functionality in production.</p>
+        
+        <div class="test-section">
+            <h3>🔍 Environment Detection</h3>
+            <div id="env-info"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📡 Backend Connectivity Test</h3>
+            <button onclick="testBackendHealth()">Test Backend Health</button>
+            <div id="health-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔐 Admin Login Test</h3>
+            <div class="admin-form">
+                <div>
+                    <label>Email:</label><br>
+                    <input type="email" id="admin-email" value="sravanthivarikuti233@gmail.com" placeholder="Admin email">
+                </div>
+                <div>
+                    <label>Password:</label><br>
+                    <input type="password" id="admin-password" value="Admin@Sravanthi4651" placeholder="Admin password">
+                </div>
+                <button onclick="testAdminLogin()">Test Admin Login</button>
+            </div>
+            <div id="login-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Dashboard Access Test</h3>
+            <button onclick="testDashboardAccess()" id="dashboard-btn" disabled>Test Dashboard Access</button>
+            <div id="dashboard-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📋 Console Logs</h3>
+            <div id="console-logs" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        let adminToken = null;
+        
+        // Override console.log to display in page
+        const originalLog = console.log;
+        const originalError = console.error;
+        const logContainer = document.getElementById('console-logs');
+        
+        function addLog(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logContainer.textContent += logEntry;
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog('ERROR: ' + args.join(' '), 'error');
+        };
+
+        // Environment detection
+        function detectEnvironment() {
+            const hostname = window.location.hostname;
+            const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+            const isNetlify = hostname.includes('netlify.app');
+            
+            let apiUrl;
+            if (isLocalhost) {
+                apiUrl = 'http://localhost:5000/api';
+            } else if (isNetlify) {
+                apiUrl = 'https://online-fee-payment-and-reciept-system.onrender.com/api';
+            } else {
+                apiUrl = 'https://online-fee-payment-and-reciept-system.onrender.com/api';
+            }
+            
+            const envInfo = document.getElementById('env-info');
+            envInfo.innerHTML = `
+                <strong>Current Environment:</strong><br>
+                - Hostname: ${hostname}<br>
+                - Is Localhost: ${isLocalhost}<br>
+                - Is Netlify: ${isNetlify}<br>
+                - API URL: ${apiUrl}
+            `;
+            
+            console.log('🔍 Environment detected:', { hostname, isLocalhost, isNetlify, apiUrl });
+            return apiUrl;
+        }
+
+        // Test backend health
+        async function testBackendHealth() {
+            const resultDiv = document.getElementById('health-result');
+            const apiUrl = detectEnvironment();
+            
+            try {
+                console.log('📡 Testing backend health...');
+                resultDiv.innerHTML = '<p>⏳ Testing backend connection...</p>';
+                
+                const response = await fetch(`${apiUrl.replace('/api', '')}/api/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Backend health check successful:', data);
+                    resultDiv.innerHTML = `<div class="success">✅ Backend is healthy!<br>Status: ${data.status}<br>Message: ${data.message}</div>`;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+            } catch (error) {
+                console.error('❌ Backend health check failed:', error);
+                resultDiv.innerHTML = `<div class="error">❌ Backend health check failed: ${error.message}</div>`;
+            }
+        }
+
+        // Test admin login
+        async function testAdminLogin() {
+            const resultDiv = document.getElementById('login-result');
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+            const apiUrl = detectEnvironment();
+            
+            try {
+                console.log('🔐 Testing admin login...');
+                resultDiv.innerHTML = '<p>⏳ Logging in...</p>';
+                
+                const response = await fetch(`${apiUrl}/admin/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    adminToken = data.token;
+                    console.log('✅ Admin login successful:', data);
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Admin login successful!<br>
+                            Name: ${data.admin.name}<br>
+                            Email: ${data.admin.email}<br>
+                            Role: ${data.admin.role}<br>
+                            Token: ${adminToken ? 'Received' : 'Missing'}
+                        </div>
+                    `;
+                    
+                    // Enable dashboard test button
+                    document.getElementById('dashboard-btn').disabled = false;
+                } else {
+                    throw new Error(data.message || `HTTP ${response.status}`);
+                }
+                
+            } catch (error) {
+                console.error('❌ Admin login failed:', error);
+                resultDiv.innerHTML = `<div class="error">❌ Admin login failed: ${error.message}</div>`;
+            }
+        }
+
+        // Test dashboard access
+        async function testDashboardAccess() {
+            const resultDiv = document.getElementById('dashboard-result');
+            const apiUrl = detectEnvironment();
+            
+            if (!adminToken) {
+                resultDiv.innerHTML = '<div class="warning">⚠️ Please login first to get admin token</div>';
+                return;
+            }
+            
+            try {
+                console.log('📊 Testing dashboard access...');
+                resultDiv.innerHTML = '<p>⏳ Accessing dashboard...</p>';
+                
+                const response = await fetch(`${apiUrl}/admin/dashboard/stats`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    console.log('✅ Dashboard access successful:', data);
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Dashboard access successful!<br>
+                            Today Revenue: ₹${data.stats.todayRevenue}<br>
+                            Total Students: ${data.stats.totalStudents}<br>
+                            Total Transactions: ${data.stats.totalTransactions}<br>
+                            Pending Dues: ₹${data.stats.pendingDues}
+                        </div>
+                    `;
+                } else {
+                    throw new Error(data.message || `HTTP ${response.status}`);
+                }
+                
+            } catch (error) {
+                console.error('❌ Dashboard access failed:', error);
+                resultDiv.innerHTML = `<div class="error">❌ Dashboard access failed: ${error.message}</div>`;
+            }
+        }
+
+        // Initialize on page load
+        window.onload = function() {
+            detectEnvironment();
+            console.log('🧪 Admin Login Test Page loaded');
+        };
+    </script>
+</body>
+</html>

@@ -46,29 +46,60 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
+      console.log("📊 AdminDashboard: Starting data fetch...");
       const token = localStorage.getItem("admin_token");
+      const adminUser = localStorage.getItem("admin_user");
+      
+      console.log("🔍 AdminDashboard: Token check:", {
+        hasToken: !!token,
+        hasAdminUser: !!adminUser,
+        tokenLength: token?.length
+      });
       
       if (!token) {
+        console.log("❌ AdminDashboard: No token found, redirecting to login");
         navigate("/admin/login");
         return;
       }
 
+      console.log("📡 AdminDashboard: Fetching stats...");
       // Fetch stats
       const statsRes = await api.get("/admin/dashboard/stats");
+      console.log("📈 AdminDashboard: Stats response:", {
+        status: statsRes.status,
+        success: statsRes.data.success,
+        stats: statsRes.data.stats
+      });
+      
       if (statsRes.data.success) {
         setStats(statsRes.data.stats);
       }
 
+      console.log("📡 AdminDashboard: Fetching recent activity...");
       // Fetch recent activity
       const activityRes = await api.get("/admin/dashboard/recent-activity");
+      console.log("📋 AdminDashboard: Activity response:", {
+        status: activityRes.status,
+        success: activityRes.data.success,
+        activitiesCount: activityRes.data.activities?.length
+      });
+      
       if (activityRes.data.success) {
         setRecentActivity(activityRes.data.activities);
       }
 
+      console.log("✅ AdminDashboard: Data fetch completed successfully");
       setLoading(false);
     } catch (error) {
-      console.error("Error fetching dashboard data:", error);
+      console.error("❌ AdminDashboard: Error fetching dashboard data:");
+      console.error("  - Status:", error.response?.status);
+      console.error("  - Status Text:", error.response?.statusText);
+      console.error("  - Data:", error.response?.data);
+      console.error("  - Message:", error.message);
+      console.error("  - Full Error:", error);
+      
       if (error.response?.status === 401 || error.response?.status === 403) {
+        console.log("🔓 AdminDashboard: Authentication error, clearing tokens and redirecting");
         localStorage.removeItem("admin_token");
         localStorage.removeItem("admin_user");
         navigate("/admin/login");

@@ -39,21 +39,56 @@ export default function AdminLogin() {
     setError("");
 
     try {
+      console.log("🔐 Starting admin login process...");
+      console.log("📧 Email:", formData.email);
+      console.log("🌐 API Base URL:", api.defaults.baseURL);
+      
       const response = await api.post("/admin/login", formData);
+      
+      console.log("📡 Login response received:", {
+        status: response.status,
+        success: response.data.success,
+        hasToken: !!response.data.token,
+        adminName: response.data.admin?.name
+      });
 
       if (response.data.success) {
         // Store admin token and data
         localStorage.setItem("admin_token", response.data.token);
         localStorage.setItem("admin_user", JSON.stringify(response.data.admin));
 
-        console.log("✅ Admin login successful");
+        console.log("✅ Admin login successful - stored token and user data");
+        console.log("👤 Admin details:", response.data.admin);
         
-        // Navigate to admin dashboard
-        navigate("/admin/dashboard");
+        // Small delay to ensure storage is complete
+        setTimeout(() => {
+          console.log("🚀 Navigating to admin dashboard...");
+          navigate("/admin/dashboard");
+        }, 100);
+      } else {
+        throw new Error(response.data.message || "Login failed");
       }
     } catch (err) {
-      console.error("❌ Admin login error:", err);
-      setError(err.response?.data?.message || "Login failed. Please try again.");
+      console.error("❌ Admin login error details:");
+      console.error("  - Status:", err.response?.status);
+      console.error("  - Status Text:", err.response?.statusText);
+      console.error("  - Data:", err.response?.data);
+      console.error("  - Message:", err.message);
+      console.error("  - Full Error:", err);
+      
+      let errorMessage = "Login failed. Please try again.";
+      
+      if (err.response?.status === 401) {
+        errorMessage = "Invalid email or password. Please check your credentials.";
+      } else if (err.response?.status === 500) {
+        errorMessage = "Server error. Please try again later.";
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message.includes('Network Error')) {
+        errorMessage = "Network error. Please check your connection and try again.";
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
