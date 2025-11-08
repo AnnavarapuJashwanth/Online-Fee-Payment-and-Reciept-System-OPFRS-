@@ -25,9 +25,7 @@ import {
   HourglassEmpty,
   Delete,
 } from "@mui/icons-material";
-import axios from "axios";
-
-const API_URL = "http://localhost:5000/api";
+import api from "../services/api";
 
 export default function ScholarshipsNew() {
   const user = JSON.parse(localStorage.getItem("ofprs_user") || "{}");
@@ -71,9 +69,7 @@ export default function ScholarshipsNew() {
   const fetchScholarships = async () => {
     try {
       const token = localStorage.getItem("ofprs_token");
-      const response = await axios.get(`${API_URL}/scholarships/user`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get("/scholarships/user");
 
       if (response.data.success) {
         setScholarships(response.data.scholarships);
@@ -141,9 +137,7 @@ export default function ScholarshipsNew() {
         bankDocumentUrl: files.bankDocument,
       };
 
-      const response = await axios.post(`${API_URL}/scholarships`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.post("/scholarships", payload);
 
       if (response.data.success) {
         setSnackbar({

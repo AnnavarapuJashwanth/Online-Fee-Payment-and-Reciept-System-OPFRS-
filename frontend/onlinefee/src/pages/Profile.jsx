@@ -16,9 +16,7 @@ import {
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faCamera, faSave } from "@fortawesome/free-solid-svg-icons";
-import axios from "axios";
-
-const API_URL = "http://localhost:5000/api";
+import api from "../services/api";
 
 export default function Profile() {
   const [loading, setLoading] = useState(false);
@@ -63,9 +61,7 @@ export default function Profile() {
       // Then fetch from backend to get latest data
       const token = localStorage.getItem("ofprs_token");
       if (token) {
-        const response = await axios.get(`${API_URL}/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await api.get("/profile");
         if (response.data.success) {
           const userData = response.data.user;
           setProfileData({
@@ -170,16 +166,7 @@ export default function Profile() {
         profilePhoto: profileData.profilePhoto ? "Image data present" : "No image"
       });
 
-      const response = await axios.put(
-        `${API_URL}/profile`, 
-        profileData,
-        {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-        }
-      );
+      const response = await api.put("/profile", profileData);
       
       console.log("Profile update response:", response.data);
       

@@ -28,9 +28,7 @@ import {
   faSpinner,
   faFileInvoice,
 } from "@fortawesome/free-solid-svg-icons";
-import axios from "axios";
-
-const API_URL = "http://localhost:5000/api";
+import api from "../services/api";
 
 export default function RefundStatus() {
   const [refunds, setRefunds] = useState([]);
@@ -54,9 +52,7 @@ export default function RefundStatus() {
   const fetchRefunds = async () => {
     try {
       const token = localStorage.getItem("ofprs_token");
-      const response = await axios.get(`${API_URL}/refunds/user`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get("/refunds/user");
       
       if (response.data.success) {
         setRefunds(response.data.refunds);
@@ -71,7 +67,7 @@ export default function RefundStatus() {
   const fetchTransactions = async () => {
     try {
       const user = JSON.parse(localStorage.getItem("ofprs_user") || "{}");
-      const response = await axios.get(`${API_URL}/payment/transactions?email=${user.email}`);
+      const response = await api.get(`/payment/transactions?email=${user.email}`);
       
       if (response.data.success) {
         const paidTransactions = response.data.transactions.filter(t => t.status === "paid");
@@ -85,9 +81,7 @@ export default function RefundStatus() {
   const handleSubmitRefund = async () => {
     try {
       const token = localStorage.getItem("ofprs_token");
-      const response = await axios.post(
-        `${API_URL}/refunds`,
-        {
+      const response = await api.post("/refunds", {
           ...formData,
           bankDetails: {
             accountNumber: formData.accountNumber,

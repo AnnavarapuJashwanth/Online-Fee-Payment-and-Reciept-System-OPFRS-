@@ -41,9 +41,7 @@ import {
   faSync
 } from "@fortawesome/free-solid-svg-icons";
 import { getAllTransactions } from "../services/transactionService";
-import axios from "axios";
-
-const API_URL = "http://localhost:5000/api";
+import api from "../services/api";
 
 export default function Dashboard() {
   const user = JSON.parse(localStorage.getItem("ofprs_user") || "null") || { name: "Guest" };
@@ -85,8 +83,7 @@ export default function Dashboard() {
     try {
       const token = localStorage.getItem("ofprs_token");
       
-      const response = await axios.get(`${API_URL}/fees/student`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await api.get("/fees/student", {
         timeout: 3000
       });
       

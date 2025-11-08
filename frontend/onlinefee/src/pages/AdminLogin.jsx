@@ -13,9 +13,7 @@ import {
   IconButton,
 } from "@mui/material";
 import { Visibility, VisibilityOff, AdminPanelSettings } from "@mui/icons-material";
-import axios from "axios";
-
-const API_URL = "http://localhost:5000/api";
+import api from "../services/api";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -41,7 +39,7 @@ export default function AdminLogin() {
     setError("");
 
     try {
-      const response = await axios.post(`${API_URL}/admin/login`, formData);
+      const response = await api.post("/admin/login", formData);
 
       if (response.data.success) {
         // Store admin token and data

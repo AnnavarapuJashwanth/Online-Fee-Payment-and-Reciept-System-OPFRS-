@@ -26,10 +26,8 @@ import {
   AttachMoney,
   School,
 } from "@mui/icons-material";
-import axios from "axios";
+import api from "../../services/api";
 import AdminLayout from "../../components/AdminLayout";
-
-const API_URL = "http://localhost:5000/api";
 
 export default function Reports() {
   const navigate = useNavigate();
@@ -60,7 +58,7 @@ export default function Reports() {
       };
 
       // Fetch support tickets
-      const ticketsRes = await axios.get(`${API_URL}/support/admin/tickets`, config);
+      const ticketsRes = await api.get("/support/admin/tickets");
       if (ticketsRes.data.success) {
         setSupportTickets(ticketsRes.data.tickets || []);
         setStats(prev => ({
@@ -71,7 +69,7 @@ export default function Reports() {
       }
 
       // Fetch dashboard stats
-      const statsRes = await axios.get(`${API_URL}/admin/dashboard/stats`, config);
+      const statsRes = await api.get("/admin/dashboard/stats");
       if (statsRes.data.success) {
         setStats(prev => ({
           ...prev,

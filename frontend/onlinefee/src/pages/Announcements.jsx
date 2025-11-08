@@ -21,9 +21,7 @@ import {
   faFlag,
   faBook,
 } from "@fortawesome/free-solid-svg-icons";
-import axios from "axios";
-
-const API_URL = "http://localhost:5000/api";
+import api from "../services/api";
 
 export default function Announcements() {
   const [announcements, setAnnouncements] = useState([]);
@@ -54,7 +52,7 @@ export default function Announcements() {
     try {
       setLoading(true);
       const params = selectedCategory !== "All Announcements" ? `?category=${selectedCategory}` : "";
-      const response = await axios.get(`${API_URL}/announcements${params}`);
+      const response = await api.get(`/announcements${params}`);
       
       if (response.data.success) {
         setAnnouncements(response.data.announcements);

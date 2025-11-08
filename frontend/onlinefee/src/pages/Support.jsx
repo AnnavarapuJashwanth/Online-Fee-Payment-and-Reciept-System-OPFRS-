@@ -26,9 +26,7 @@ import {
   faTicketAlt,
   faPaperPlane,
 } from "@fortawesome/free-solid-svg-icons";
-import axios from "axios";
-
-const API_URL = "http://localhost:5000/api";
+import api from "../services/api";
 
 export default function Support() {
   const user = JSON.parse(localStorage.getItem("ofprs_user") || "{}");
@@ -61,9 +59,7 @@ export default function Support() {
   const fetchTickets = async () => {
     try {
       const token = localStorage.getItem("ofprs_token");
-      const response = await axios.get(`${API_URL}/support/user`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get("/support/user");
       
       if (response.data.success) {
         setTickets(response.data.tickets);
@@ -88,9 +84,7 @@ export default function Support() {
     setLoading(true);
     try {
       const token = localStorage.getItem("ofprs_token");
-      const response = await axios.post(`${API_URL}/support`, formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.post("/support", formData);
 
       if (response.data.success) {
         setSnackbar({

@@ -37,10 +37,8 @@ import {
   Close,
   FileDownload,
 } from "@mui/icons-material";
-import axios from "axios";
+import api from "../../services/api";
 import AdminLayout from "../../components/AdminLayout";
-
-const API_URL = "http://localhost:5000/api";
 
 export default function AdminScholarships() {
   const navigate = useNavigate();
@@ -86,9 +84,9 @@ export default function AdminScholarships() {
 
       console.log("📚 Fetching scholarships...");
       console.log("Token:", token ? "Present" : "Missing");
-      console.log("API URL:", `${API_URL}/admin/scholarships`);
+      console.log("API URL:", "/admin/scholarships");
       
-      const response = await axios.get(`${API_URL}/admin/scholarships`, config);
+      const response = await api.get("/admin/scholarships");
 
       if (response.data.success) {
         console.log(`✅ Loaded ${response.data.scholarships?.length || 0} scholarships`);
@@ -158,10 +156,9 @@ export default function AdminScholarships() {
         headers: { Authorization: `Bearer ${token}` },
       };
 
-      const response = await axios.put(
-        `${API_URL}/admin/scholarships/${selectedScholarship._id}/approve`,
-        { adminMessage },
-        config
+      const response = await api.put(
+        `/admin/scholarships/${selectedScholarship._id}/approve`,
+        { adminMessage }
       );
 
       if (response.data.success) {
@@ -190,10 +187,9 @@ export default function AdminScholarships() {
         headers: { Authorization: `Bearer ${token}` },
       };
 
-      const response = await axios.put(
-        `${API_URL}/admin/scholarships/${selectedScholarship._id}/reject`,
-        { adminMessage },
-        config
+      const response = await api.put(
+        `/admin/scholarships/${selectedScholarship._id}/reject`,
+        { adminMessage }
       );
 
       if (response.data.success) {

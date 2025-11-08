@@ -24,10 +24,8 @@ import {
   People,
   CheckCircle,
 } from "@mui/icons-material";
-import axios from "axios";
+import api from "../../services/api";
 import AdminLayout from "../../components/AdminLayout";
-
-const API_URL = "http://localhost:5000/api";
 
 export default function SendReminders() {
   const navigate = useNavigate();
@@ -63,7 +61,7 @@ export default function SendReminders() {
         headers: { Authorization: `Bearer ${token}` },
       };
 
-      const response = await axios.get(`${API_URL}/admin/dashboard/stats`, config);
+      const response = await api.get("/admin/dashboard/stats");
       if (response.data.success) {
         setStats({
           totalStudents: response.data.stats.totalStudents || 0,
@@ -100,13 +98,12 @@ export default function SendReminders() {
 
       // Check if sending to all users
       const endpoint = formData.targetGroup === "all_users" 
-        ? `${API_URL}/admin/send-email-all`
-        : `${API_URL}/admin/send-reminder`;
+        ? "/admin/send-email-all"
+        : "/admin/send-reminder";
 
-      const response = await axios.post(
+      const response = await api.post(
         endpoint,
-        formData,
-        config
+        formData
       );
 
       if (response.data.success) {

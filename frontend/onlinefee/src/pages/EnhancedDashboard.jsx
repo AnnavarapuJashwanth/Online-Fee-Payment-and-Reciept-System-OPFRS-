@@ -21,9 +21,7 @@ import {
   faEnvelope, faReceipt, faChartBar, faUserCircle
 } from "@fortawesome/free-solid-svg-icons";
 import { getAllTransactions } from "../services/transactionService";
-import axios from "axios";
-
-const API_URL = "http://localhost:5000/api";
+import api from "../services/api";
 
 export default function EnhancedDashboard() {
   const user = JSON.parse(localStorage.getItem("ofprs_user") || "null") || { name: "Guest" };
@@ -67,9 +65,9 @@ export default function EnhancedDashboard() {
 
           // Fetch student fees and payment summary
           const [feesRes, summaryRes, announcementsRes] = await Promise.all([
-            axios.get(`${API_URL}/fees/student`, config),
-            axios.get(`${API_URL}/fees/student/summary`, config),
-            axios.get(`${API_URL}/announcements`, config)
+            api.get("/fees/student"),
+            api.get("/fees/student/summary"),
+            api.get("/announcements")
           ]);
 
           if (feesRes.data.success) {

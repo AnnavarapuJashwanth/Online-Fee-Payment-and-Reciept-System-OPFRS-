@@ -25,9 +25,7 @@ import {
   faClock,
   faTimesCircle,
 } from "@fortawesome/free-solid-svg-icons";
-import axios from "axios";
-
-const API_URL = "http://localhost:5000/api";
+import api from "../services/api";
 
 export default function Scholarships() {
   const user = JSON.parse(localStorage.getItem("ofprs_user") || "{}");
@@ -57,9 +55,7 @@ export default function Scholarships() {
   const fetchScholarships = async () => {
     try {
       const token = localStorage.getItem("ofprs_token");
-      const response = await axios.get(`${API_URL}/scholarships/user`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get("/scholarships/user");
       
       if (response.data.success) {
         setScholarships(response.data.scholarships);
@@ -88,9 +84,7 @@ export default function Scholarships() {
     setLoading(true);
     try {
       const token = localStorage.getItem("ofprs_token");
-      const response = await axios.post(`${API_URL}/scholarships`, formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.post("/scholarships", formData);
 
       if (response.data.success) {
         setSnackbar({

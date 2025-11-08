@@ -31,9 +31,7 @@ import {
   faUserCircle
 } from "@fortawesome/free-solid-svg-icons";
 import { getAllTransactions } from "../services/transactionService";
-import axios from "axios";
-
-const API_URL = "http://localhost:5000/api";
+import api from "../services/api";
 
 export default function SimplifiedDashboard() {
   const user = JSON.parse(localStorage.getItem("ofprs_user") || "null") || { name: "Guest" };
@@ -73,12 +71,10 @@ export default function SimplifiedDashboard() {
           try {
             // Quick attempt at new API
             const [summaryRes, feesRes] = await Promise.all([
-              axios.get(`${API_URL}/fees/student/summary`, {
-                headers: { Authorization: `Bearer ${token}` },
+              api.get("/fees/student/summary", {
                 timeout: 3000 // 3 second timeout
               }),
-              axios.get(`${API_URL}/fees/student`, {
-                headers: { Authorization: `Bearer ${token}` },
+              api.get("/fees/student", {
                 timeout: 3000
               })
             ]);

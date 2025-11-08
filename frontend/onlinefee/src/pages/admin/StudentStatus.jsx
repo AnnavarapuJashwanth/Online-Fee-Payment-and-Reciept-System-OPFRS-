@@ -23,10 +23,8 @@ import {
   Grid,
 } from "@mui/material";
 import { Search, CheckCircle, Warning, Cancel, HourglassEmpty } from "@mui/icons-material";
-import axios from "axios";
+import api from "../../services/api";
 import AdminLayout from "../../components/AdminLayout";
-
-const API_URL = "http://localhost:5000/api";
 
 export default function StudentStatus() {
   const navigate = useNavigate();
@@ -66,7 +64,7 @@ export default function StudentStatus() {
         },
       };
 
-      const response = await axios.get(`${API_URL}/admin/students`, config);
+      const response = await api.get("/admin/students", config);
       
       if (response.data.success) {
         setStudents(response.data.students);

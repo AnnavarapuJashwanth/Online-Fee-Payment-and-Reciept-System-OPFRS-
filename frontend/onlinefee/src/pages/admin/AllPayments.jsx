@@ -22,10 +22,8 @@ import {
   Pagination,
 } from "@mui/material";
 import { Search, FileDownload } from "@mui/icons-material";
-import axios from "axios";
+import api from "../../services/api";
 import AdminLayout from "../../components/AdminLayout";
-
-const API_URL = "http://localhost:5000/api";
 
 export default function AllPayments() {
   const navigate = useNavigate();
@@ -59,7 +57,7 @@ export default function AllPayments() {
         },
       };
 
-      const response = await axios.get(`${API_URL}/admin/payments`, config);
+      const response = await api.get("/admin/payments", config);
       
       if (response.data.success) {
         setPayments(response.data.payments);

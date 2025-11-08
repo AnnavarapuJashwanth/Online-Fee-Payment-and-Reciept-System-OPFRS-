@@ -38,10 +38,8 @@ import {
   Assessment,
   TrendingUp,
 } from "@mui/icons-material";
-import axios from "axios";
+import api from "../../services/api";
 import AdminLayout from "../../components/AdminLayout";
-
-const API_URL = "http://localhost:5000/api";
 
 const actionIcons = {
   login: <Login className="!text-green-600" />,
@@ -92,7 +90,7 @@ export default function ActivityLog() {
         },
       };
 
-      const response = await axios.get(`${API_URL}/admin/activity-log`, config);
+      const response = await api.get("/admin/activity-log");
 
       if (response.data.success) {
         setActivities(response.data.activities);

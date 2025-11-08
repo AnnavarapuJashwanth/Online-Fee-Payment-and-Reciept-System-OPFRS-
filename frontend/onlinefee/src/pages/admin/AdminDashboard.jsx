@@ -26,10 +26,8 @@ import {
   Notifications,
   Assessment,
 } from "@mui/icons-material";
-import axios from "axios";
+import api from "../../services/api";
 import AdminLayout from "../../components/AdminLayout";
-
-const API_URL = "http://localhost:5000/api";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -60,13 +58,13 @@ export default function AdminDashboard() {
       };
 
       // Fetch stats
-      const statsRes = await axios.get(`${API_URL}/admin/dashboard/stats`, config);
+      const statsRes = await api.get("/admin/dashboard/stats");
       if (statsRes.data.success) {
         setStats(statsRes.data.stats);
       }
 
       // Fetch recent activity
-      const activityRes = await axios.get(`${API_URL}/admin/dashboard/recent-activity`, config);
+      const activityRes = await api.get("/admin/dashboard/recent-activity");
       if (activityRes.data.success) {
         setRecentActivity(activityRes.data.activities);
       }

@@ -36,10 +36,8 @@ import {
   Delete,
   MoneyOff,
 } from "@mui/icons-material";
-import axios from "axios";
+import api from "../../services/api";
 import AdminLayout from "../../components/AdminLayout";
-
-const API_URL = "http://localhost:5000/api";
 
 const categories = [
   "Tuition",
@@ -87,7 +85,7 @@ export default function ManageFees() {
         headers: { Authorization: `Bearer ${token}` },
       };
 
-      const response = await axios.get(`${API_URL}/admin/fees`, config);
+      const response = await api.get("/admin/fees");
       if (response.data.success) {
         setFees(response.data.fees || []);
       }
@@ -145,11 +143,7 @@ export default function ManageFees() {
         headers: { Authorization: `Bearer ${token}` },
       };
 
-      const response = await axios.post(
-        `${API_URL}/admin/fees`,
-        formData,
-        config
-      );
+      const response = await api.post("/admin/fees", formData);
 
       if (response.data.success) {
         fetchFees();
@@ -170,7 +164,7 @@ export default function ManageFees() {
         headers: { Authorization: `Bearer ${token}` },
       };
 
-      await axios.delete(`${API_URL}/admin/fees/${id}`, config);
+      await api.delete(`/admin/fees/${id}`);
       fetchFees();
     } catch (error) {
       console.error("Error deleting fee:", error);

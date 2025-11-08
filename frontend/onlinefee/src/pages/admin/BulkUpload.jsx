@@ -27,10 +27,8 @@ import {
   Error,
   Warning,
 } from "@mui/icons-material";
-import axios from "axios";
+import api from "../../services/api";
 import AdminLayout from "../../components/AdminLayout";
-
-const API_URL = "http://localhost:5000/api";
 
 export default function BulkUpload() {
   const navigate = useNavigate();
@@ -78,11 +76,7 @@ export default function BulkUpload() {
         },
       };
 
-      const response = await axios.post(
-        `${API_URL}/admin/bulk-upload`,
-        formData,
-        config
-      );
+      const response = await api.post("/admin/bulk-upload", formData);
 
       if (response.data.success) {
         setUploadResult(response.data);
