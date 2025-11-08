@@ -57,10 +57,6 @@ export default function SendReminders() {
         return;
       }
 
-      const config = {
-        headers: { Authorization: `Bearer ${token}` },
-      };
-
       const response = await api.get("/admin/dashboard/stats");
       if (response.data.success) {
         setStats({

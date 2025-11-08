@@ -114,8 +114,15 @@ export const verifyPayment = async (req, res) => {
 
       // ✅ Send email receipt
       if (payment && payment.email) {
-        await sendReceipt(payment);
-        console.log(`✅ Payment verified & receipt sent to ${payment.email}`);
+        try {
+          console.log(`📧 Attempting to send receipt to ${payment.email}`);
+          await sendReceipt(payment);
+          console.log(`✅ Payment verified & receipt sent successfully to ${payment.email}`);
+        } catch (emailError) {
+          console.error(`❌ Failed to send receipt email to ${payment.email}:`, emailError.message);
+          console.error("❌ Full email error:", emailError);
+          // Don't fail the payment verification if email fails
+        }
       } else {
         console.warn("⚠️ Payment record not found or missing email");
       }

@@ -40,6 +40,23 @@ svg {
   height: 1em !important;
 }
 
+/* FontAwesome SVG icon fixes */
+.svg-inline--fa {
+  width: 1em !important;
+  height: 1em !important;
+}
+
+/* Fix for FontAwesome icons with auto dimensions */
+svg.svg-inline--fa[width="auto"],
+svg.svg-inline--fa[style*="width: auto"] {
+  width: 1em !important;
+}
+
+svg.svg-inline--fa[height="auto"],
+svg.svg-inline--fa[style*="height: auto"] {
+  height: 1em !important;
+}
+
 /* Fix for any SVG that might get auto dimensions from CSS */
 svg[width="auto"],
 svg[style*="width: auto"] {
@@ -49,4 +66,76 @@ svg[style*="width: auto"] {
 svg[height="auto"],
 svg[style*="height: auto"] {
   height: 24px !important;
+}
+
+/* Ensure all SVG elements have valid dimensions */
+svg:not([width]):not([style*="width"]) {
+  width: 1em;
+}
+
+svg:not([height]):not([style*="height"]) {
+  height: 1em;
+}
+
+/* Mobile responsiveness improvements */
+@media (max-width: 768px) {
+  /* Ensure icons are properly sized on mobile */
+  .svg-inline--fa {
+    width: 1.2em !important;
+    height: 1.2em !important;
+  }
+  
+  /* Better touch targets for mobile */
+  button svg,
+  .MuiIconButton-root svg {
+    width: 1.5em !important;
+    height: 1.5em !important;
+  }
+  
+  /* Mobile-specific form improvements */
+  .MuiTextField-root {
+    margin-bottom: 1rem !important;
+  }
+  
+  /* Better button spacing on mobile */
+  .MuiButton-root {
+    padding: 12px 16px !important;
+    min-height: 48px !important;
+  }
+  
+  /* Improved touch targets for OTP input */
+  input[type="text"], input[type="email"], input[type="password"] {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+    padding: 12px !important;
+  }
+  
+  /* Better spacing for mobile forms */
+  .space-y-4 > * + * {
+    margin-top: 1.5rem !important;
+  }
+}
+
+/* Specific improvements for OTP and email functionality */
+.otp-input {
+  text-align: center;
+  font-size: 1.5rem;
+  letter-spacing: 0.5rem;
+}
+
+@media (max-width: 480px) {
+  /* Extra small screens */
+  .MuiContainer-root {
+    padding: 0 1rem !important;
+  }
+  
+  /* Smaller text on very small screens */
+  .MuiTypography-h4 {
+    font-size: 1.5rem !important;
+  }
+  
+  /* Better OTP input on small screens */
+  .otp-input {
+    font-size: 1.25rem;
+    letter-spacing: 0.25rem;
+  }
 }

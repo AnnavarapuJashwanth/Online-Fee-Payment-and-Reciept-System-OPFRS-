@@ -32,13 +32,34 @@ router.post("/test-email", async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: "Email is required" });
 
+    console.log(`🧪 Testing email configuration for: ${email}`);
+    
+    // Check environment variables
+    const emailUser = process.env.EMAIL_HOST_USER || process.env.SMTP_USER;
+    const emailPass = process.env.EMAIL_HOST_PASSWORD || process.env.SMTP_PASS;
+    
+    console.log(`📧 Email config check:`);
+    console.log(`- EMAIL_HOST_USER: ${emailUser ? '✅ Set' : '❌ Missing'}`);
+    console.log(`- EMAIL_HOST_PASSWORD: ${emailPass ? '✅ Set' : '❌ Missing'}`);
+
+    if (!emailUser || !emailPass) {
+      return res.status(500).json({
+        success: false,
+        message: "❌ Email configuration missing in backend environment variables",
+        details: {
+          emailUser: !!emailUser,
+          emailPass: !!emailPass
+        }
+      });
+    }
+
     // 🔹 Generate random 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000);
 
     // 🔹 Send OTP email
     await sendOtpEmail(email, otp);
 
-    console.log(`📩 Test OTP ${otp} sent to ${email}`);
+    console.log(`📩 Test OTP ${otp} sent successfully to ${email}`);
 
     res.json({
       success: true,
@@ -46,7 +67,8 @@ router.post("/test-email", async (req, res) => {
       otp, // (optional: remove this in production for security)
     });
   } catch (err) {
-    console.error("❌ Test email error:", err);
+    console.error("❌ Test email error:", err.message);
+    console.error("❌ Full error:", err);
     res.status(500).json({
       success: false,
       message: "❌ Failed to send test email",

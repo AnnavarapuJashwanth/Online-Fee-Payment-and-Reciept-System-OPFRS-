@@ -55,7 +55,6 @@ export default function StudentStatus() {
       }
 
       const config = {
-        headers: { Authorization: `Bearer ${token}` },
         params: {
           page,
           limit: 20,
@@ -87,7 +86,9 @@ export default function StudentStatus() {
       setLoading(false);
     } catch (error) {
       console.error("Error fetching students:", error);
-      if (error.response?.status === 401) {
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        localStorage.removeItem("admin_token");
+        localStorage.removeItem("admin_user");
         navigate("/admin/login");
       }
       setLoading(false);

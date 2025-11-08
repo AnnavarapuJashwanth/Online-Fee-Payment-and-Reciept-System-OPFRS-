@@ -48,7 +48,6 @@ export default function AllPayments() {
       }
 
       const config = {
-        headers: { Authorization: `Bearer ${token}` },
         params: {
           page,
           limit: 20,

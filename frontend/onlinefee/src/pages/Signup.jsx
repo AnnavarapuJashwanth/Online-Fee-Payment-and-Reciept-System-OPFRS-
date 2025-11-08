@@ -62,11 +62,63 @@ export default function Signup() {
           </div>
 
           <form onSubmit={submit} className="space-y-4">
-          <TextField name="name" label="Full Name" fullWidth required value={form.name} onChange={change} />
-          <TextField name="regno" label="Registration No" fullWidth required value={form.regno} onChange={change} />
-          <TextField name="email" label="Email" fullWidth required value={form.email} onChange={change} />
-          <TextField name="phone" label="Phone Number" fullWidth required value={form.phone} onChange={change} />
-          <TextField name="password" label="Password" type="password" fullWidth required value={form.password} onChange={change} />
+          <TextField 
+            name="name" 
+            label="Full Name" 
+            fullWidth 
+            required 
+            value={form.name} 
+            onChange={change}
+            inputProps={{ autoComplete: "name" }}
+          />
+          <TextField 
+            name="regno" 
+            label="Registration No" 
+            fullWidth 
+            required 
+            value={form.regno} 
+            onChange={change}
+            inputProps={{ autoComplete: "username" }}
+          />
+          <TextField 
+            name="email" 
+            label="Email" 
+            type="email"
+            fullWidth 
+            required 
+            value={form.email} 
+            onChange={change}
+            inputProps={{ 
+              inputMode: "email",
+              autoComplete: "email" 
+            }}
+            placeholder="your.email@example.com"
+          />
+          <TextField 
+            name="phone" 
+            label="Phone Number" 
+            type="tel"
+            fullWidth 
+            required 
+            value={form.phone} 
+            onChange={change}
+            inputProps={{ 
+              inputMode: "tel",
+              autoComplete: "tel",
+              pattern: "[0-9]*"
+            }}
+            placeholder="+91 9876543210"
+          />
+          <TextField 
+            name="password" 
+            label="Password" 
+            type="password" 
+            fullWidth 
+            required 
+            value={form.password} 
+            onChange={change}
+            inputProps={{ autoComplete: "new-password" }}
+          />
           <Button
             type="submit"
             variant="contained"

@@ -53,10 +53,6 @@ export default function AdminDashboard() {
         return;
       }
 
-      const config = {
-        headers: { Authorization: `Bearer ${token}` },
-      };
-
       // Fetch stats
       const statsRes = await api.get("/admin/dashboard/stats");
       if (statsRes.data.success) {
@@ -72,7 +68,7 @@ export default function AdminDashboard() {
       setLoading(false);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
-      if (error.response?.status === 401) {
+      if (error.response?.status === 401 || error.response?.status === 403) {
         localStorage.removeItem("admin_token");
         localStorage.removeItem("admin_user");
         navigate("/admin/login");

@@ -81,10 +81,6 @@ export default function ManageFees() {
       }
 
       setLoading(true);
-      const config = {
-        headers: { Authorization: `Bearer ${token}` },
-      };
-
       const response = await api.get("/admin/fees");
       if (response.data.success) {
         setFees(response.data.fees || []);
@@ -92,6 +88,11 @@ export default function ManageFees() {
       setLoading(false);
     } catch (error) {
       console.error("Error fetching fees:", error);
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        localStorage.removeItem("admin_token");
+        localStorage.removeItem("admin_user");
+        navigate("/admin/login");
+      }
       setLoading(false);
     }
   };

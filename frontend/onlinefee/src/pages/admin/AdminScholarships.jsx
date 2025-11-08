@@ -73,7 +73,6 @@ export default function AdminScholarships() {
 
       setLoading(true);
       const config = {
-        headers: { Authorization: `Bearer ${token}` },
         params: {
           status: statusFilter !== "all" ? statusFilter : undefined,
           page: pagination.page,
@@ -86,7 +85,7 @@ export default function AdminScholarships() {
       console.log("Token:", token ? "Present" : "Missing");
       console.log("API URL:", "/admin/scholarships");
       
-      const response = await api.get("/admin/scholarships");
+      const response = await api.get("/admin/scholarships", config);
 
       if (response.data.success) {
         console.log(`✅ Loaded ${response.data.scholarships?.length || 0} scholarships`);

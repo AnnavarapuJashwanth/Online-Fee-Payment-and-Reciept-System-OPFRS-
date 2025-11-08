@@ -93,18 +93,34 @@ export const sendOtp = async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: "Email is required" });
 
+    console.log(`🔍 Looking for user with email: ${email}`);
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "User not found" });
+    if (!user) {
+      console.log(`❌ User not found for email: ${email}`);
+      return res.status(400).json({ message: "User not found with this email address" });
+    }
 
+    console.log(`✅ User found: ${user.name} (${user.regno})`);
     const otp = generateOtp();
     otpStore[email] = { otp, expires: Date.now() + 5 * 60 * 1000 };
+    
+    console.log(`📧 Attempting to send OTP ${otp} to ${email}`);
     await sendOtpEmail(email, otp);
 
-    console.log(`📧 OTP ${otp} sent to ${email}`);
-    res.json({ message: "OTP sent successfully to email" });
+    console.log(`✅ OTP ${otp} sent successfully to ${email}`);
+    res.json({ 
+      success: true,
+      message: "OTP sent successfully to your email address",
+      email: email // Return email for confirmation
+    });
   } catch (err) {
-    console.error("❌ OTP send error:", err);
-    res.status(500).json({ message: "Error sending OTP" });
+    console.error("❌ OTP send error:", err.message);
+    console.error("❌ Full error:", err);
+    res.status(500).json({ 
+      success: false,
+      message: "Failed to send OTP. Please check your email address and try again.",
+      error: err.message 
+    });
   }
 };
 

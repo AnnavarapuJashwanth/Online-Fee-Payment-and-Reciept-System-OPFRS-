@@ -80,7 +80,6 @@ export default function ActivityLog() {
 
       setLoading(true);
       const config = {
-        headers: { Authorization: `Bearer ${token}` },
         params: {
           page,
           limit: 20,
@@ -90,7 +89,7 @@ export default function ActivityLog() {
         },
       };
 
-      const response = await api.get("/admin/activity-log");
+      const response = await api.get("/admin/activity-log", config);
 
       if (response.data.success) {
         setActivities(response.data.activities);

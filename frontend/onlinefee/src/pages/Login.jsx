@@ -185,8 +185,14 @@ export default function Login() {
               label="Registered Email"
               fullWidth
               required
+              type="email"
               value={form.email}
               onChange={change}
+              inputProps={{
+                inputMode: "email",
+                autoComplete: "email"
+              }}
+              placeholder="your.email@example.com"
             />
 
             {otpSent && (
@@ -202,6 +208,13 @@ export default function Login() {
                   required
                   value={form.otp}
                   onChange={change}
+                  inputProps={{
+                    className: "otp-input",
+                    maxLength: 6,
+                    pattern: "[0-9]*",
+                    inputMode: "numeric"
+                  }}
+                  placeholder="000000"
                 />
               </motion.div>
             )}
