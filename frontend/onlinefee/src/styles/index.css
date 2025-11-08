@@ -1,0 +1,52 @@
+ @tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* App overrides */
+:root {
+  --primary: #1976d2;
+}
+
+body {
+  @apply bg-gray-50 text-gray-800;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* small helper */
+.app-card {
+  @apply bg-white rounded-2xl shadow-lg p-6;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out;
+}
+.button-primary {
+  @apply bg-blue-600 text-white font-semibold py-2 px-4 rounded hover:bg-blue-700 transition;
+}
+
+/* Fix SVG attribute errors - prevent auto dimensions */
+svg {
+  /* Ensure SVG elements don't have auto dimensions */
+  min-width: 1em;
+  min-height: 1em;
+}
+
+/* Override Material-UI SVG icons to have proper dimensions */
+.MuiSvgIcon-root {
+  width: 1em !important;
+  height: 1em !important;
+}
+
+/* Fix for any SVG that might get auto dimensions from CSS */
+svg[width="auto"],
+svg[style*="width: auto"] {
+  width: 24px !important;
+}
+
+svg[height="auto"],
+svg[style*="height: auto"] {
+  height: 24px !important;
+}
