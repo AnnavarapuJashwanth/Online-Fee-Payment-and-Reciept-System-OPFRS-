@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// Temporarily hardcoded for testing - remove after fixing
-const BASE_URL = "http://localhost:5000/api";
+// 🌐 Dynamic API URL based on environment
+const BASE_URL = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
 // 🔍 Debug environment variable loading
 console.log("🔍 API Service Debug:");
