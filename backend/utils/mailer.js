@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { generateReceiptPDF } from "./pdfGenerator.js";
+import { createSimpleTransporter } from "./alternativeMailer.js";
 
 // ✅ Get email configuration (will be validated when first used)
 const getEmailConfig = () => {
@@ -13,66 +14,142 @@ const getEmailConfig = () => {
   return { emailUser, emailPass };
 };
 
-// ✅ Create transporter with lazy configuration and timeout
+// ✅ Create transporter with production-optimized Gmail configuration
 const createTransporter = () => {
   const { emailUser, emailPass } = getEmailConfig();
   
   return nodemailer.createTransport({
-    host: "smtp.gmail.com", // Gmail SMTP host
-    port: 587,              // TLS port (STARTTLS)
-    secure: false,          // false for TLS
-    connectionTimeout: 10000, // 10 seconds connection timeout
-    greetingTimeout: 5000,    // 5 seconds greeting timeout
-    socketTimeout: 10000,     // 10 seconds socket timeout
+    service: 'gmail',        // Use Gmail service (better than manual config)
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,           // Use STARTTLS
+    requireTLS: true,        // Force TLS
+    connectionTimeout: 60000, // 60 seconds for production
+    greetingTimeout: 30000,   // 30 seconds greeting timeout
+    socketTimeout: 60000,     // 60 seconds socket timeout
     auth: {
       user: emailUser,
       pass: emailPass,
     },
     tls: {
       rejectUnauthorized: false,
+      ciphers: 'SSLv3',
     },
+    debug: true,             // Enable debug logging
+    logger: true,            // Enable logger
   });
 };
 
-// ✅ Send OTP Email with timeout (used in authController)
+// ✅ Send OTP Email with multiple fallback methods
 export const sendOtpEmail = async (email, otp) => {
+  const html = `
+    <div style="font-family:Arial;padding:20px;">
+      <h2>🔐 Login OTP Verification</h2>
+      <p>Your one-time password (OTP) for OFPRS login is:</p>
+      <div style="background:#f0f8ff;padding:20px;text-align:center;border-radius:8px;margin:20px 0;">
+        <h1 style="color:#1976d2;font-size:36px;margin:0;">${otp}</h1>
+      </div>
+      <p><strong>This OTP is valid for 5 minutes only.</strong></p>
+      <p>If you didn't request this OTP, please ignore this email.</p>
+      <hr>
+      <p style="color:#666;font-size:12px;">OFPRS - Online Fee Payment and Receipt System</p>
+    </div>
+  `;
+
+  // Method 1: Try optimized Gmail STARTTLS
   try {
-    console.log(`📧 Creating email transporter for ${email}...`);
+    console.log(`📧 Method 1: Trying Gmail STARTTLS for ${email}...`);
     const transporter = createTransporter();
     const { emailUser } = getEmailConfig();
     
-    const html = `
-      <div style="font-family:Arial;padding:20px;">
-        <h2>Login OTP Verification</h2>
-        <p>Your one-time password (OTP) for login is:</p>
-        <h1 style="color:#1976d2;">${otp}</h1>
-        <p>This OTP is valid for 5 minutes.</p>
-      </div>
-    `;
-
-    console.log(`📧 Sending email to ${email}...`);
+    console.log(`📧 Testing SMTP connection...`);
+    await transporter.verify();
+    console.log(`✅ SMTP connection verified successfully`);
     
-    // Add timeout wrapper for email sending
+    console.log(`📧 Sending email via Gmail STARTTLS...`);
+    
     const emailPromise = transporter.sendMail({
       from: `"OFPRS Portal" <${emailUser}>`,
       to: email,
-      subject: "Your OTP Code - OFPRS",
+      subject: "🔐 Your OTP Code - OFPRS Login",
       html,
+      priority: 'high'
     });
 
-    // Race between email sending and timeout
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Email sending timeout after 15 seconds')), 15000);
+      setTimeout(() => reject(new Error('Gmail STARTTLS timeout after 30 seconds')), 30000);
     });
 
     await Promise.race([emailPromise, timeoutPromise]);
-
-    console.log(`✅ OTP email sent successfully to ${email}`);
-  } catch (error) {
-    console.error("❌ Error sending OTP email:", error.message);
-    console.error("❌ Full error details:", error);
-    throw new Error(`Failed to send email: ${error.message}`);
+    console.log(`✅ Method 1 SUCCESS: OTP email sent via Gmail STARTTLS to ${email}`);
+    return;
+    
+  } catch (error1) {
+    console.log(`❌ Method 1 FAILED: Gmail STARTTLS - ${error1.message}`);
   }
+
+  // Method 2: Try Gmail SSL
+  try {
+    console.log(`📧 Method 2: Trying Gmail SSL for ${email}...`);
+    const sslTransporter = createSimpleTransporter();
+    
+    console.log(`📧 Testing SSL connection...`);
+    await sslTransporter.verify();
+    console.log(`✅ SSL connection verified successfully`);
+    
+    console.log(`📧 Sending email via Gmail SSL...`);
+    
+    const emailPromise = sslTransporter.sendMail({
+      from: `"OFPRS Portal" <${process.env.EMAIL_HOST_USER}>`,
+      to: email,
+      subject: "🔐 Your OTP Code - OFPRS Login",
+      html,
+      priority: 'high'
+    });
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Gmail SSL timeout after 30 seconds')), 30000);
+    });
+
+    await Promise.race([emailPromise, timeoutPromise]);
+    console.log(`✅ Method 2 SUCCESS: OTP email sent via Gmail SSL to ${email}`);
+    return;
+    
+  } catch (error2) {
+    console.log(`❌ Method 2 FAILED: Gmail SSL - ${error2.message}`);
+  }
+
+  // Method 3: Try with different Gmail settings
+  try {
+    console.log(`📧 Method 3: Trying Gmail with relaxed settings for ${email}...`);
+    const relaxedTransporter = nodemailer.createTransporter({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_HOST_USER,
+        pass: process.env.EMAIL_HOST_PASSWORD,
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
+    
+    await relaxedTransporter.sendMail({
+      from: `"OFPRS Portal" <${process.env.EMAIL_HOST_USER}>`,
+      to: email,
+      subject: "🔐 Your OTP Code - OFPRS Login",
+      html,
+    });
+    
+    console.log(`✅ Method 3 SUCCESS: OTP email sent via relaxed Gmail to ${email}`);
+    return;
+    
+  } catch (error3) {
+    console.log(`❌ Method 3 FAILED: Relaxed Gmail - ${error3.message}`);
+  }
+
+  // All methods failed
+  console.error(`❌ ALL EMAIL METHODS FAILED for ${email}`);
+  throw new Error(`All email sending methods failed. Please check email configuration and try again.`);
 };
 
 // ✅ Send Payment Receipt with PDF Attachment (used in paymentController)
