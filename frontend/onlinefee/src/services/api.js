@@ -1,15 +1,12 @@
 import axios from "axios";
+import getApiConfig from "../config/apiConfig.js";
 
-// 🌐 Dynamic API URL based on environment
-const BASE_URL = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
-
-// 🔍 Debug environment variable loading
-console.log("🔍 API Service Debug:");
-console.log("VITE_API_BASE from env:", import.meta.env.VITE_API_BASE);
-console.log("Final BASE_URL being used:", BASE_URL);
+// 🌐 Get API configuration based on environment
+const config = getApiConfig();
 
 const api = axios.create({
-  baseURL: BASE_URL,
+  baseURL: config.baseURL,
+  timeout: config.timeout,
 });
 
 api.interceptors.request.use((config) => {

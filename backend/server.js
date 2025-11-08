@@ -51,31 +51,54 @@ const app = express();
 
 // ✅ Middlewares - CORS Configuration
 const allowedOrigins = [
+  // Local development
   "http://localhost:3000",
   "http://localhost:5173", 
   "http://localhost:5174",
   "http://localhost:5175",
   "http://localhost:4173",
+  // Production deployments
   "https://opfrs9.netlify.app",
-  "https://opfrs9.netlify.app/"
+  "https://opfrs9.netlify.app/",
+  // Add any custom domains
+  "https://online-fee-payment-and-reciept-system.onrender.com"
 ];
 
 app.use(cors({ 
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    console.log("🔍 CORS Request from origin:", origin);
+    
+    // Allow requests with no origin (like mobile apps, Postman, or curl requests)
+    if (!origin) {
+      console.log("✅ CORS: Allowing request with no origin");
+      return callback(null, true);
+    }
     
     if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log("✅ CORS: Origin allowed:", origin);
       callback(null, true);
     } else {
-      console.log("❌ CORS blocked origin:", origin);
+      console.log("❌ CORS: Origin blocked:", origin);
+      console.log("📋 Allowed origins:", allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar']
 }));
+
+// ✅ Handle preflight OPTIONS requests
+app.options('*', (req, res) => {
+  console.log("🔍 Preflight OPTIONS request from:", req.headers.origin);
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
+
 app.use(bodyParser.json({ limit: "50mb" })); // Increased for profile photos
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 app.use(morgan("dev"));
