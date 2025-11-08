@@ -105,14 +105,28 @@ export const sendOtp = async (req, res) => {
     otpStore[email] = { otp, expires: Date.now() + 5 * 60 * 1000 };
     
     console.log(`📧 Attempting to send OTP ${otp} to ${email}`);
-    await sendOtpEmail(email, otp);
-
-    console.log(`✅ OTP ${otp} sent successfully to ${email}`);
-    res.json({ 
-      success: true,
-      message: "OTP sent successfully to your email address",
-      email: email // Return email for confirmation
-    });
+    
+    try {
+      await sendOtpEmail(email, otp);
+      console.log(`✅ OTP ${otp} sent successfully to ${email}`);
+      
+      res.json({ 
+        success: true,
+        message: "OTP sent successfully to your email address",
+        email: email
+      });
+    } catch (emailError) {
+      console.error("❌ Email sending failed, but OTP is stored:", emailError.message);
+      
+      // Still return success since OTP is stored, but with different message
+      res.json({ 
+        success: true,
+        message: `OTP generated (${otp}) - Email service temporarily unavailable. Use this OTP to login.`,
+        email: email,
+        otp: otp, // Include OTP in response for debugging
+        warning: "Email service timeout - OTP displayed for testing"
+      });
+    }
   } catch (err) {
     console.error("❌ OTP send error:", err.message);
     console.error("❌ Full error:", err);

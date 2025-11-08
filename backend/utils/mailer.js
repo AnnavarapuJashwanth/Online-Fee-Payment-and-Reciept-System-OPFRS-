@@ -13,7 +13,7 @@ const getEmailConfig = () => {
   return { emailUser, emailPass };
 };
 
-// ✅ Create transporter with lazy configuration
+// ✅ Create transporter with lazy configuration and timeout
 const createTransporter = () => {
   const { emailUser, emailPass } = getEmailConfig();
   
@@ -21,6 +21,9 @@ const createTransporter = () => {
     host: "smtp.gmail.com", // Gmail SMTP host
     port: 587,              // TLS port (STARTTLS)
     secure: false,          // false for TLS
+    connectionTimeout: 10000, // 10 seconds connection timeout
+    greetingTimeout: 5000,    // 5 seconds greeting timeout
+    socketTimeout: 10000,     // 10 seconds socket timeout
     auth: {
       user: emailUser,
       pass: emailPass,
@@ -31,9 +34,10 @@ const createTransporter = () => {
   });
 };
 
-// ✅ Send OTP Email (used in authController)
+// ✅ Send OTP Email with timeout (used in authController)
 export const sendOtpEmail = async (email, otp) => {
   try {
+    console.log(`📧 Creating email transporter for ${email}...`);
     const transporter = createTransporter();
     const { emailUser } = getEmailConfig();
     
@@ -46,17 +50,28 @@ export const sendOtpEmail = async (email, otp) => {
       </div>
     `;
 
-    await transporter.sendMail({
+    console.log(`📧 Sending email to ${email}...`);
+    
+    // Add timeout wrapper for email sending
+    const emailPromise = transporter.sendMail({
       from: `"OFPRS Portal" <${emailUser}>`,
       to: email,
       subject: "Your OTP Code - OFPRS",
       html,
     });
 
-    console.log(`✅ OTP email sent to ${email}`);
+    // Race between email sending and timeout
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Email sending timeout after 15 seconds')), 15000);
+    });
+
+    await Promise.race([emailPromise, timeoutPromise]);
+
+    console.log(`✅ OTP email sent successfully to ${email}`);
   } catch (error) {
-    console.error("❌ Error sending OTP email:", error);
-    throw error;
+    console.error("❌ Error sending OTP email:", error.message);
+    console.error("❌ Full error details:", error);
+    throw new Error(`Failed to send email: ${error.message}`);
   }
 };
 
