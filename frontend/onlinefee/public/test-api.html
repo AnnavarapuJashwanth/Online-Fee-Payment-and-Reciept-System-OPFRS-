@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test - OFPRS</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .log { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 3px; font-family: monospace; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 OFPRS API Test Page</h1>
+        <p>Use this page to test the production API connectivity and OTP functionality.</p>
+        
+        <div class="test-section">
+            <h3>🔍 Environment Detection</h3>
+            <div id="env-info"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📡 API Connectivity Test</h3>
+            <button onclick="testConnectivity()">Test Backend Connection</button>
+            <div id="connectivity-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📧 OTP Test</h3>
+            <input type="email" id="test-email" placeholder="Enter email address" value="jashwanthannavarapu99@gmail.com" style="padding: 8px; width: 300px; margin-right: 10px;">
+            <button onclick="testOTP()">Send Test OTP</button>
+            <div id="otp-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📋 Console Logs</h3>
+            <div id="console-logs" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // Override console.log to display in page
+        const originalLog = console.log;
+        const originalError = console.error;
+        const logContainer = document.getElementById('console-logs');
+        
+        function addLog(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logContainer.textContent += logEntry;
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog('ERROR: ' + args.join(' '), 'error');
+        };
+
+        // Environment detection
+        function detectEnvironment() {
+            const hostname = window.location.hostname;
+            const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+            const isNetlify = hostname.includes('netlify.app');
+            
+            let apiUrl;
+            if (isLocalhost) {
+                apiUrl = 'http://localhost:5000/api';
+            } else if (isNetlify) {
+                apiUrl = 'https://online-fee-payment-and-reciept-system.onrender.com/api';
+            } else {
+                apiUrl = 'https://online-fee-payment-and-reciept-system.onrender.com/api';
+            }
+            
+            const envInfo = document.getElementById('env-info');
+            envInfo.innerHTML = `
+                <strong>Current Environment:</strong><br>
+                - Hostname: ${hostname}<br>
+                - Is Localhost: ${isLocalhost}<br>
+                - Is Netlify: ${isNetlify}<br>
+                - API URL: ${apiUrl}
+            `;
+            
+            console.log('🔍 Environment detected:', { hostname, isLocalhost, isNetlify, apiUrl });
+            return apiUrl;
+        }
+
+        // Test connectivity
+        async function testConnectivity() {
+            const resultDiv = document.getElementById('connectivity-result');
+            const apiUrl = detectEnvironment();
+            
+            try {
+                console.log('📡 Testing backend connectivity...');
+                resultDiv.innerHTML = '<p>⏳ Testing connection...</p>';
+                
+                const response = await fetch(`${apiUrl.replace('/api', '')}/api/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Backend connectivity successful:', data);
+                    resultDiv.innerHTML = `<div class="success">✅ Backend is accessible!<br>Status: ${data.status}<br>Message: ${data.message}</div>`;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+            } catch (error) {
+                console.error('❌ Connectivity test failed:', error);
+                resultDiv.innerHTML = `<div class="error">❌ Connection failed: ${error.message}</div>`;
+            }
+        }
+
+        // Test OTP
+        async function testOTP() {
+            const resultDiv = document.getElementById('otp-result');
+            const emailInput = document.getElementById('test-email');
+            const apiUrl = detectEnvironment();
+            
+            try {
+                console.log('📧 Testing OTP functionality...');
+                resultDiv.innerHTML = '<p>⏳ Sending OTP...</p>';
+                
+                const response = await fetch(`${apiUrl}/auth/send-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: emailInput.value
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    console.log('✅ OTP sent successfully:', data);
+                    resultDiv.innerHTML = `<div class="success">✅ OTP sent successfully!<br>Email: ${data.email}<br>Message: ${data.message}</div>`;
+                } else {
+                    throw new Error(data.message || `HTTP ${response.status}`);
+                }
+                
+            } catch (error) {
+                console.error('❌ OTP test failed:', error);
+                resultDiv.innerHTML = `<div class="error">❌ OTP failed: ${error.message}</div>`;
+            }
+        }
+
+        // Initialize on page load
+        window.onload = function() {
+            detectEnvironment();
+            console.log('🧪 API Test Page loaded');
+        };
+    </script>
+</body>
+</html>
