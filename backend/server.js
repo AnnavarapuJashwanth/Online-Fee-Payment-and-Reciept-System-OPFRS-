@@ -66,9 +66,11 @@ const allowedOrigins = [
   "http://localhost:5182",
   "http://localhost:5183",
   "http://localhost:5184",
-  // Production deployments
+  // Production deployments - Netlify
   "https://opfrs9.netlify.app",
   "https://opfrs9.netlify.app/",
+  "https://opfrs9--main.netlify.app",
+  "https://main--opfrs9.netlify.app",
   // Backend self-reference
   "https://online-fee-payment-and-reciept-system.onrender.com"
 ];
