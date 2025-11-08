@@ -51,8 +51,9 @@ const app = express();
 
 // ✅ Middlewares - CORS Configuration
 const allowedOrigins = [
-  // Local development
+  // Local development - all common ports
   "http://localhost:3000",
+  "http://localhost:4173",
   "http://localhost:5173", 
   "http://localhost:5174",
   "http://localhost:5175",
@@ -60,16 +61,15 @@ const allowedOrigins = [
   "http://localhost:5177",
   "http://localhost:5178",
   "http://localhost:5179",
-   "http://localhost:5180/",
-   "http://localhost:5181/",
-   "http://localhost:5182/",
-   "http://localhost:5183/",
-   "http://localhost:5184/",
-  "http://localhost:4173",
+  "http://localhost:5180",
+  "http://localhost:5181",
+  "http://localhost:5182",
+  "http://localhost:5183",
+  "http://localhost:5184",
   // Production deployments
   "https://opfrs9.netlify.app",
   "https://opfrs9.netlify.app/",
-  // Add any custom domains
+  // Backend self-reference
   "https://online-fee-payment-and-reciept-system.onrender.com"
 ];
 
@@ -83,6 +83,13 @@ app.use(cors({
       return callback(null, true);
     }
     
+    // Allow all localhost origins for development
+    if (origin && origin.startsWith('http://localhost:')) {
+      console.log("✅ CORS: Allowing localhost origin:", origin);
+      return callback(null, true);
+    }
+    
+    // Check specific allowed origins for production
     if (allowedOrigins.indexOf(origin) !== -1) {
       console.log("✅ CORS: Origin allowed:", origin);
       callback(null, true);
