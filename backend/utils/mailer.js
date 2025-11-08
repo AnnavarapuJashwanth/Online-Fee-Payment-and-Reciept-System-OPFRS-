@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import { generateReceiptPDF } from "./pdfGenerator.js";
 import { createSimpleTransporter } from "./alternativeMailer.js";
+import { sendOtpViaEmailJS, sendOtpViaBrevo, sendOtpViaResend } from "./emailjs-service.js";
 
 // ✅ Get email configuration (will be validated when first used)
 const getEmailConfig = () => {
@@ -40,8 +41,42 @@ const createTransporter = () => {
   });
 };
 
-// ✅ Send OTP Email with multiple fallback methods
+// ✅ Send OTP Email with production-friendly services first, then Gmail fallback
 export const sendOtpEmail = async (email, otp) => {
+  console.log(`📧 Starting OTP email delivery to ${email} with OTP: ${otp}`);
+
+  // Method 1: Try EmailJS (Works in ALL production environments)
+  try {
+    console.log(`📧 Method 1: Trying EmailJS (Production-Friendly) for ${email}...`);
+    await sendOtpViaEmailJS(email, otp);
+    console.log(`✅ Method 1 SUCCESS: OTP sent via EmailJS to ${email}`);
+    return;
+  } catch (error1) {
+    console.log(`❌ Method 1 FAILED: EmailJS - ${error1.message}`);
+  }
+
+  // Method 2: Try Brevo (Free tier, production-friendly)
+  try {
+    console.log(`📧 Method 2: Trying Brevo (Production-Friendly) for ${email}...`);
+    await sendOtpViaBrevo(email, otp);
+    console.log(`✅ Method 2 SUCCESS: OTP sent via Brevo to ${email}`);
+    return;
+  } catch (error2) {
+    console.log(`❌ Method 2 FAILED: Brevo - ${error2.message}`);
+  }
+
+  // Method 3: Try Resend (Modern email API)
+  try {
+    console.log(`📧 Method 3: Trying Resend (Production-Friendly) for ${email}...`);
+    await sendOtpViaResend(email, otp);
+    console.log(`✅ Method 3 SUCCESS: OTP sent via Resend to ${email}`);
+    return;
+  } catch (error3) {
+    console.log(`❌ Method 3 FAILED: Resend - ${error3.message}`);
+  }
+
+  console.log(`⚠️ All production-friendly services failed, trying Gmail as last resort...`);
+
   const html = `
     <div style="font-family:Arial;padding:20px;">
       <h2>🔐 Login OTP Verification</h2>
