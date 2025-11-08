@@ -26,8 +26,8 @@ export const verifyAdmin = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       console.log("🔓 Admin Auth - Token decoded:", { id: decoded.id, role: decoded.role });
 
-      // Check if it's an admin token
-      if (decoded.role !== "admin") {
+      // Check if it's an admin token (accept both admin and superadmin)
+      if (decoded.role !== "admin" && decoded.role !== "superadmin") {
         console.log("❌ Admin Auth - Invalid role:", decoded.role);
         return res.status(403).json({
           success: false,

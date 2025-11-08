@@ -3,8 +3,8 @@ import jwt from "jsonwebtoken";
 import ActivityLog from "../models/ActivityLog.js";
 
 // Generate JWT token
-const generateToken = (id) => {
-  return jwt.sign({ id, role: "admin" }, process.env.JWT_SECRET, {
+const generateToken = (id, role = "admin") => {
+  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
     expiresIn: "7d",
   });
 };
@@ -82,8 +82,8 @@ export const adminLogin = async (req, res) => {
       userAgent: req.headers["user-agent"],
     });
 
-    // Generate token
-    const token = generateToken(admin._id);
+    // Generate token with admin's actual role
+    const token = generateToken(admin._id, admin.role);
 
     console.log("✅ Admin login successful:", email);
 
