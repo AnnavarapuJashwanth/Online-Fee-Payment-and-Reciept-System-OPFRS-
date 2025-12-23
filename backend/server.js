@@ -72,6 +72,10 @@ const allowedOrigins = [
   "https://opfrs9.netlify.app/",
   "https://opfrs9--main.netlify.app",
   "https://main--opfrs9.netlify.app",
+  // AWS S3 Frontend
+  "http://ofprs-frontend-20251223.s3-website.ap-south-1.amazonaws.com",
+  // AWS Elastic Beanstalk Backend
+  "http://ofprs-production.eba-jhxevv9p.ap-south-1.elasticbeanstalk.com",
   // Backend self-reference
   "https://online-fee-payment-and-reciept-system.onrender.com"
 ];
@@ -95,6 +99,18 @@ app.use(cors({
     // Allow all netlify.app domains for production
     if (origin && origin.includes('netlify.app')) {
       console.log("✅ CORS: Allowing Netlify origin:", origin);
+      return callback(null, true);
+    }
+    
+    // Allow all AWS S3 website domains
+    if (origin && origin.includes('s3-website')) {
+      console.log("✅ CORS: Allowing S3 website origin:", origin);
+      return callback(null, true);
+    }
+    
+    // Allow all AWS Elastic Beanstalk domains
+    if (origin && origin.includes('elasticbeanstalk.com')) {
+      console.log("✅ CORS: Allowing Elastic Beanstalk origin:", origin);
       return callback(null, true);
     }
     
