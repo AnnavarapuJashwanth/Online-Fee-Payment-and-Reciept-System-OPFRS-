@@ -9,12 +9,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const envPath = path.join(__dirname, ".env");
 
-// ✅ Verify .env exists and load
-if (!fs.existsSync(envPath)) {
-  console.error("❌ .env file not found at:", envPath);
-  process.exit(1);
+// ✅ Load .env if exists (for local dev), otherwise use AWS environment variables
+if (fs.existsSync(envPath)) {
+  console.log("✅ Loading .env file from:", envPath);
+  dotenv.config({ path: envPath });
+} else {
+  console.log("ℹ️ No .env file found, using environment variables (AWS mode)");
 }
-dotenv.config({ path: envPath });
 
 // ✅ Debug .env status
 console.log("🔍 ENV CHECK:");
