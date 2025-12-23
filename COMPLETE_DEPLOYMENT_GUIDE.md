@@ -74,7 +74,7 @@ Ensure your backend `package.json` has:
 ### **C. Environment Variables for Render**
 You'll need to set these in Render dashboard:
 ```env
-MONGO_URI=mongodb+srv://jashwanthannavarapu99_db_user:42974297@fee4297.vbtbubj.mongodb.net/?appName=fee4297
+MONGO_URI=mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/?appName=YOUR_APP
 JWT_SECRET=supersecret429704902
 RAZORPAY_KEY_ID=rzp_test_Rc8QRJUPRiu73d
 RAZORPAY_KEY_SECRET=YSk5377sTkdGCWgx2OJYT09G
