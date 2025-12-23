@@ -208,22 +208,48 @@ export const sendReceipt = async (payment) => {
   }
 };
 
-// ✅ Generic send email function
+// ✅ Email validation utility
+const isValidEmail = (email) => {
+  if (!email || typeof email !== 'string') return false;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email.trim());
+};
+
+// ✅ Generic send email function with improved validation
 export const sendEmail = async ({ to, subject, html }) => {
   try {
+    // Validate email address
+    if (!isValidEmail(to)) {
+      throw new Error(`Invalid email address: ${to}`);
+    }
+
+    // Validate required fields
+    if (!subject || !html) {
+      throw new Error('Subject and HTML content are required');
+    }
+
     const transporter = createTransporter();
     const { emailUser } = getEmailConfig();
 
+    // Test connection before sending (optional, can be removed for performance)
+    console.log(`📧 Verifying email connection...`);
+    await transporter.verify();
+    console.log(`✅ Email connection verified`);
+
     await transporter.sendMail({
       from: `"OFPRS Portal" <${emailUser}>`,
-      to,
-      subject,
+      to: to.trim(),
+      subject: subject.trim(),
       html,
+      priority: 'normal'
     });
 
-    console.log(`✅ Email sent to ${to}`);
+    console.log(`✅ Email sent successfully to ${to}`);
   } catch (error) {
-    console.error("❌ Error sending email:", error);
-    throw error;
+    console.error(`❌ Error sending email to ${to}:`, error.message);
+    throw new Error(`Failed to send email to ${to}: ${error.message}`);
   }
 };
+
+// ✅ Export email validation utility
+export { isValidEmail };

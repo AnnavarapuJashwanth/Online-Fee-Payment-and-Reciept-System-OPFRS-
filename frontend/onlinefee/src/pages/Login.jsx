@@ -32,19 +32,50 @@ export default function Login() {
   const handlePasswordLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
+    
     try {
+      console.log("🔐 Starting student login process...");
+      console.log("👤 Login data:", { regno: form.regno, password: "[HIDDEN]" });
+      
       const res = await api.post("/auth/login", {
         regno: form.regno,
         password: form.password,
       });
 
+      console.log("📡 Login response:", {
+        status: res.status,
+        message: res.data.message,
+        hasToken: !!res.data.token,
+        userName: res.data.user?.name
+      });
+
       const { token, user } = res.data;
       localStorage.setItem("ofprs_token", token);
       localStorage.setItem("ofprs_user", JSON.stringify(user));
+      
+      console.log("✅ Student login successful - stored token and user data");
+      console.log("👤 User details:", user);
+      
       setSnackbar({ open: true, message: "✅ Login successful!", severity: "success" });
       setTimeout(() => nav("/dashboard"), 1000);
     } catch (err) {
-      setSnackbar({ open: true, message: err.response?.data?.message || "Login failed", severity: "error" });
+      console.error("❌ Student login error details:");
+      console.error("  - Status:", err.response?.status);
+      console.error("  - Status Text:", err.response?.statusText);
+      console.error("  - Data:", err.response?.data);
+      console.error("  - Message:", err.message);
+      
+      let errorMessage = "Login failed. Please try again.";
+      
+      if (err.response?.status === 400) {
+        errorMessage = err.response.data.message || "Invalid credentials.";
+      } else if (err.response?.status === 500) {
+        errorMessage = "Server error. Please try again later.";
+      } else if (err.message.includes('Network Error')) {
+        errorMessage = "Network error. Please check your connection.";
+      }
+      
+      setSnackbar({ open: true, message: errorMessage, severity: "error" });
     } finally {
       setLoading(false);
     }

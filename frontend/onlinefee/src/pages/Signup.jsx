@@ -21,12 +21,34 @@ export default function Signup() {
   const submit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    
     try {
-      await api.post("/auth/signup", form);
+      console.log("📝 Starting signup process...");
+      console.log("👤 Form data:", { ...form, password: "[HIDDEN]" });
+      
+      const response = await api.post("/auth/signup", form);
+      
+      console.log("✅ Signup response:", response.data);
       setSnackbar({ open: true, message: "✅ Signup successful! Redirecting to login...", severity: "success" });
       setTimeout(() => nav("/login"), 1500);
     } catch (err) {
-      setSnackbar({ open: true, message: err.response?.data?.message || "Signup failed", severity: "error" });
+      console.error("❌ Signup error details:");
+      console.error("  - Status:", err.response?.status);
+      console.error("  - Status Text:", err.response?.statusText);
+      console.error("  - Data:", err.response?.data);
+      console.error("  - Message:", err.message);
+      
+      let errorMessage = "Signup failed. Please try again.";
+      
+      if (err.response?.status === 400) {
+        errorMessage = err.response.data.message || "Invalid data provided.";
+      } else if (err.response?.status === 500) {
+        errorMessage = "Server error. Please try again later.";
+      } else if (err.message.includes('Network Error')) {
+        errorMessage = "Network error. Please check your connection.";
+      }
+      
+      setSnackbar({ open: true, message: errorMessage, severity: "error" });
     } finally {
       setLoading(false);
     }

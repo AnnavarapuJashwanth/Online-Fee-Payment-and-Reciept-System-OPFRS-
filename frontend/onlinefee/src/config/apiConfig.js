@@ -36,13 +36,13 @@ const getApiConfig = () => {
     apiUrl = "http://localhost:5000/api";
     console.log("🏠 Detected localhost - using local API");
   } else if (isNetlify || isProduction) {
-    apiUrl = "https://online-fee-payment-and-reciept-system.onrender.com/api";
-    console.log("🌐 Detected production - using Render API");
+    apiUrl = "http://ofprs-production.eba-jhxevv9p.ap-south-1.elasticbeanstalk.com/api";
+    console.log("🌐 Detected production - using AWS API");
   } else {
     // Fallback
     apiUrl = isDevelopment 
       ? "http://localhost:5000/api"
-      : "https://online-fee-payment-and-reciept-system.onrender.com/api";
+      : "http://ofprs-production.eba-jhxevv9p.ap-south-1.elasticbeanstalk.com/api";
     console.log("🔄 Using fallback detection");
   }
   

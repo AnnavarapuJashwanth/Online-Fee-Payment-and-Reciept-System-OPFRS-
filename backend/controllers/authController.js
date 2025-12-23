@@ -10,25 +10,49 @@ const otpStore = {}; // temporary
 // 🔹 SIGNUP
 export const signupUser = async (req, res) => {
   try {
+    console.log("📝 Student signup attempt:", req.body);
     const { name, regno, email, phone, password } = req.body;
 
     if (!name || !regno || !email || !phone || !password) {
+      console.log("❌ Missing required fields");
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // check if exists by regno/email
-    const existingUser = await User.findOne({ $or: [{ regno }, { email }] });
+    console.log(`🔍 Checking if user exists: regno=${regno}, email=${email}`);
+    
+    // check if exists by regno/email (case insensitive)
+    const existingUser = await User.findOne({ 
+      $or: [
+        { regno: regno.toLowerCase() }, 
+        { email: email.toLowerCase() }
+      ] 
+    });
+    
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      console.log("❌ User already exists:", {
+        existingRegno: existingUser.regno,
+        existingEmail: existingUser.email
+      });
+      return res.status(400).json({ message: "User already exists with this registration number or email" });
     }
 
+    console.log("🔒 Hashing password...");
     const hashedPassword = await bcrypt.hash(password, 10);
+    
+    console.log("👤 Creating new user...");
     const user = await User.create({
       name,
-      regno,
-      email,
+      regno: regno.toLowerCase(), // Ensure lowercase
+      email: email.toLowerCase(), // Ensure lowercase
       phone,
       password: hashedPassword,
+    });
+
+    console.log("✅ User created successfully:", {
+      id: user._id,
+      name: user.name,
+      regno: user.regno,
+      email: user.email
     });
 
     res.status(201).json({
@@ -47,23 +71,53 @@ export const signupUser = async (req, res) => {
 // 🔹 LOGIN
 export const loginUser = async (req, res) => {
   try {
+    console.log("🔐 Student login attempt:", req.body);
     const { regno, password } = req.body;
+    
     if (!regno || !password) {
+      console.log("❌ Missing regno or password");
       return res
         .status(400)
         .json({ message: "Registration number and password required" });
     }
 
-    const user = await User.findOne({ regno });
-    if (!user) return res.status(400).json({ message: "User not found" });
+    console.log(`🔍 Looking for user with regno: ${regno} (will search as: ${regno.toLowerCase()})`);
+    
+    // Search with case insensitive regno
+    const user = await User.findOne({ regno: regno.toLowerCase() });
+    
+    if (!user) {
+      console.log(`❌ User not found with regno: ${regno.toLowerCase()}`);
+      
+      // Debug: List all users to see what's in the database
+      const allUsers = await User.find({}, 'name regno email').limit(5);
+      console.log("📋 Available users in database:", allUsers);
+      
+      return res.status(400).json({ message: "User not found with this registration number" });
+    }
 
+    console.log(`✅ User found:`, {
+      id: user._id,
+      name: user.name,
+      regno: user.regno,
+      email: user.email
+    });
+
+    console.log("🔒 Verifying password...");
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.status(400).json({ message: "Invalid credentials" });
+    
+    if (!isMatch) {
+      console.log("❌ Password verification failed");
+      return res.status(400).json({ message: "Invalid password" });
+    }
+
+    console.log("✅ Password verified successfully");
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
+
+    console.log("🔑 JWT token generated");
 
     // Log student login activity
     await ActivityLog.create({
@@ -74,7 +128,7 @@ export const loginUser = async (req, res) => {
       ipAddress: req.ip || req.connection.remoteAddress,
     });
 
-    console.log(`✅ Student login logged: ${user.name}`);
+    console.log(`✅ Student login successful: ${user.name} (${user.regno})`);
 
     res.json({
       message: "✅ Login successful",
@@ -83,7 +137,10 @@ export const loginUser = async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Login error:", err);
-    res.status(500).json({ message: "Server error during login" });
+    res.status(500).json({ 
+      message: "Server error during login",
+      error: err.message 
+    });
   }
 };
 

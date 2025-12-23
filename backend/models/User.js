@@ -100,8 +100,6 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// ✅ ensure indexes are updated cleanly
-userSchema.index({ regno: 1 }, { unique: true });
-userSchema.index({ email: 1 }, { unique: true });
+// ✅ Indexes are automatically created by unique: true in field definitions
 
 export default mongoose.model("User", userSchema);

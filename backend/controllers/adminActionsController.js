@@ -11,95 +11,243 @@ import { sendEmail } from "../utils/mailer.js";
 // @access  Private (Admin)
 export const sendReminder = async (req, res) => {
   try {
+    console.log("📧 Starting reminder send process...");
     const { reminderType, targetGroup, subject, message } = req.body;
 
+    // Validate required fields
     if (!message) {
+      console.log("❌ Missing message");
       return res.status(400).json({
         success: false,
         message: "Message is required",
       });
     }
 
-    // Get target students based on group
-    let query = {};
-    if (targetGroup === "all_pending") {
+    if (!subject) {
+      console.log("❌ Missing subject");
+      return res.status(400).json({
+        success: false,
+        message: "Subject is required",
+      });
+    }
+
+    console.log("📋 Reminder details:", { reminderType, targetGroup, subject });
+
+    // Get target students based on group with improved filtering
+    let query = { role: "student" }; // Only get students, not admins
+    let targetDescription = "";
+
+    if (targetGroup === "all_students") {
+      // All students - no additional filter needed
+      targetDescription = "all students";
+    } else if (targetGroup === "all_pending") {
+      // Students with pending payments
       const pendingPayments = await Payment.find({
         status: { $in: ["pending", "created"] },
       }).distinct("userId");
+      
+      if (pendingPayments.length === 0) {
+        console.log("⚠️ No pending payments found");
+        return res.json({
+          success: true,
+          message: "No students with pending payments found",
+          sentCount: 0,
+        });
+      }
+      
       query._id = { $in: pendingPayments };
+      targetDescription = "students with pending payments";
     } else if (targetGroup.includes("year")) {
-      const year = targetGroup.replace("_", " ");
-      query.year = year.charAt(0).toUpperCase() + year.slice(1);
+      // Filter by year
+      const yearMap = {
+        "1st_year": "1st Year",
+        "2nd_year": "2nd Year", 
+        "3rd_year": "3rd Year",
+        "4th_year": "4th Year"
+      };
+      
+      const year = yearMap[targetGroup];
+      if (year) {
+        query.year = year;
+        targetDescription = `${year} students`;
+      } else {
+        console.log("❌ Invalid year target group:", targetGroup);
+        return res.status(400).json({
+          success: false,
+          message: "Invalid target group specified",
+        });
+      }
+    } else {
+      console.log("❌ Unknown target group:", targetGroup);
+      return res.status(400).json({
+        success: false,
+        message: "Invalid target group specified",
+      });
     }
 
-    const students = await User.find(query);
-
-    // Send emails to ALL users in database
-    let sentCount = 0;
+    console.log("👥 Fetching students with query:", query);
     
-    for (const student of students) {
+    // Get students with valid emails only
+    const students = await User.find({
+      ...query,
+      email: { $exists: true, $ne: null, $ne: "" }
+    }).select("name email regno year pendingFee semesterFee").lean();
+    
+    console.log(`📊 Found ${students.length} ${targetDescription} with valid emails`);
+
+    if (students.length === 0) {
+      return res.json({
+        success: true,
+        message: `No ${targetDescription} found with valid email addresses`,
+        sentCount: 0,
+      });
+    }
+
+    // Remove duplicates based on email (prevent overlapping)
+    const uniqueStudents = students.filter((student, index, self) => 
+      index === self.findIndex(s => s.email === student.email)
+    );
+    
+    console.log(`🔄 After removing duplicates: ${uniqueStudents.length} unique students`);
+
+    let sentCount = 0;
+    let failedCount = 0;
+    const failedEmails = [];
+    
+    console.log("📤 Starting email sending process...");
+    
+    for (let i = 0; i < uniqueStudents.length; i++) {
+      const student = uniqueStudents[i];
+      
       try {
+        // Validate email format
+        if (!student.email || !student.email.includes('@')) {
+          console.log(`⚠️ Skipping invalid email: ${student.email}`);
+          failedCount++;
+          failedEmails.push(student.email);
+          continue;
+        }
+
+        console.log(`📧 Sending to ${student.name} (${student.email}) - ${i + 1}/${uniqueStudents.length}`);
+        
         if (reminderType === "email" || reminderType === "both") {
+          // Calculate actual pending amount
+          const pendingAmount = student.pendingFee || (student.semesterFee - (student.totalPaid || 0));
+          
           const personalizedMessage = message
-            .replace("{student_name}", student.name)
-            .replace("{amount}", "Pending Amount")
-            .replace("{due_date}", "Soon");
+            .replace(/\{student_name\}/g, student.name || 'Student')
+            .replace(/\{amount\}/g, `₹${pendingAmount?.toLocaleString() || 'N/A'}`)
+            .replace(/\{due_date\}/g, 'Soon')
+            .replace(/\{regno\}/g, student.regno || 'N/A');
 
           await sendEmail({
-            to: student.email, // Send to actual student email
-            subject: subject || "Fee Payment Reminder",
+            to: student.email,
+            subject: subject,
             html: `
-              <div style="font-family: Arial, sans-serif; padding: 20px;">
-                <h2 style="color: #667eea;">Fee Payment Reminder</h2>
-                <p>Dear ${student.name},</p>
-                <p style="white-space: pre-wrap;">${personalizedMessage}</p>
-                <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
-                <p style="color: #666; font-size: 12px;">
-                  This is an automated message from Vignan University Fee Management System.
-                </p>
+              <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px 10px 0 0; text-align: center;">
+                  <h1 style="color: white; margin: 0; font-size: 24px;">${subject}</h1>
+                </div>
+                
+                <div style="background-color: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                  <p style="color: #333; font-size: 16px; margin-bottom: 20px;">Dear ${student.name || 'Student'},</p>
+                  
+                  <div style="color: #666; font-size: 16px; line-height: 1.6; white-space: pre-wrap; margin-bottom: 20px;">
+${personalizedMessage}
+                  </div>
+                  
+                  <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <p style="margin: 0; color: #666; font-size: 14px;">
+                      <strong>Student Details:</strong><br>
+                      Registration Number: ${student.regno || 'N/A'}<br>
+                      Year: ${student.year || 'N/A'}<br>
+                      Pending Amount: ₹${pendingAmount?.toLocaleString() || 'N/A'}
+                    </p>
+                  </div>
+                  
+                  <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+                  <p style="color: #666; font-size: 12px; margin: 0;">
+                    This is an automated message from Vignan University Fee Management System.<br>
+                    Please do not reply to this email.
+                  </p>
+                </div>
               </div>
             `,
           });
+          
           sentCount++;
+          console.log(`✅ Email sent successfully to ${student.email}`);
+          
+          // Add small delay to avoid overwhelming the email server
+          if (i < uniqueStudents.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
         }
+        
+        // TODO: Add SMS functionality here if reminderType includes "sms"
+        
       } catch (error) {
-        console.error(`Failed to send to ${student.email}:`, error);
+        console.error(`❌ Failed to send to ${student.email}:`, error.message);
+        failedCount++;
+        failedEmails.push(student.email);
       }
     }
 
+    console.log(`📊 Email sending completed: ${sentCount} sent, ${failedCount} failed`);
+
     // Log activity
-    await ActivityLog.create({
-      userId: req.admin._id,
-      userType: "admin",
-      action: "reminder_sent",
-      description: `Sent ${reminderType} reminder to ${sentCount} students`,
-      metadata: { targetGroup, sentCount },
-    });
+    try {
+      await ActivityLog.create({
+        userId: req.admin._id,
+        userType: "admin",
+        action: "reminder_sent",
+        description: `Sent ${reminderType} reminder to ${sentCount} out of ${uniqueStudents.length} ${targetDescription}`,
+        metadata: { 
+          targetGroup, 
+          sentCount, 
+          failedCount, 
+          totalTargeted: uniqueStudents.length,
+          reminderType 
+        },
+      });
+      console.log("✅ Activity logged");
+    } catch (logError) {
+      console.error("❌ Failed to log activity:", logError.message);
+    }
 
     // Create announcement for students
-    await Announcement.create({
-      title: subject || "Payment Reminder",
-      content: message,
-      category: "Fee Payment",
-      priority: "high",
-      targetAudience: "students",
-      postedBy: req.admin._id,
-    });
+    try {
+      await Announcement.create({
+        title: subject,
+        content: message,
+        category: "Fee Payment",
+        priority: "high",
+        targetAudience: "students",
+        postedBy: req.admin._id,
+      });
+      console.log("✅ Announcement created for reminder");
+    } catch (announcementError) {
+      console.error("❌ Failed to create announcement:", announcementError.message);
+    }
 
-    console.log(`✅ Sent reminders to ${sentCount} students`);
-    console.log(`✅ Announcement created for reminder`);
+    console.log(`🎉 Reminder process completed successfully!`);
 
     res.json({
       success: true,
-      message: `Reminder sent to ${sentCount} students`,
+      message: `Reminder sent to ${sentCount} out of ${uniqueStudents.length} ${targetDescription}`,
       sentCount,
+      failedCount,
+      totalTargeted: uniqueStudents.length,
+      failedEmails: failedEmails.length > 0 ? failedEmails.slice(0, 5) : [], // Show first 5 failed emails
     });
   } catch (error) {
     console.error("❌ Error sending reminder:", error);
+    console.error("Error stack:", error.stack);
     res.status(500).json({
       success: false,
       message: "Error sending reminder",
       error: error.message,
+      details: "Please check server logs for more information"
     });
   }
 };
@@ -128,9 +276,16 @@ export const sendEmailToAll = async (req, res) => {
       email: { $exists: true, $ne: null, $ne: "" }
     }).select("name email regno year").lean();
     
-    console.log(`📊 Found ${users.length} users with valid emails`);
+    // Remove duplicates based on email (prevent overlapping)
+    const uniqueUsers = users.filter((user, index, self) => 
+      index === self.findIndex(u => u.email === user.email)
+    );
+    
+    console.log(`🔄 After removing duplicates: ${uniqueUsers.length} unique users out of ${users.length} total`);
+    
+    console.log(`📊 Found ${uniqueUsers.length} unique users with valid emails`);
 
-    if (users.length === 0) {
+    if (uniqueUsers.length === 0) {
       return res.json({
         success: true,
         message: "No users found to send emails to",
@@ -146,8 +301,8 @@ export const sendEmailToAll = async (req, res) => {
     // Send emails to users (limit concurrent sends)
     console.log("📤 Starting email sending process...");
     
-    for (let i = 0; i < users.length; i++) {
-      const user = users[i];
+    for (let i = 0; i < uniqueUsers.length; i++) {
+      const user = uniqueUsers[i];
       
       try {
         // Validate email format
@@ -157,7 +312,7 @@ export const sendEmailToAll = async (req, res) => {
           continue;
         }
 
-        console.log(`📧 Sending to ${user.name} (${user.email}) - ${i + 1}/${users.length}`);
+        console.log(`📧 Sending to ${user.name} (${user.email}) - ${i + 1}/${uniqueUsers.length}`);
         
         await sendEmail({
           to: user.email,
@@ -197,7 +352,7 @@ ${message}
         console.log(`✅ Email sent successfully to ${user.email}`);
         
         // Add small delay to avoid overwhelming the email server
-        if (i < users.length - 1) {
+        if (i < uniqueUsers.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 100));
         }
         
@@ -216,10 +371,10 @@ ${message}
         userId: req.admin._id,
         userType: "admin",
         action: "mass_email_sent",
-        description: `Sent mass email to ${sentCount} out of ${users.length} registered users`,
+        description: `Sent mass email to ${sentCount} out of ${uniqueUsers.length} registered users`,
         metadata: { 
           subject, 
-          totalUsers: users.length, 
+          totalUsers: uniqueUsers.length, 
           sentCount, 
           failedCount,
           targetGroup: targetGroup || 'all_users'
@@ -249,8 +404,8 @@ ${message}
 
     res.json({
       success: true,
-      message: `Email sent to ${sentCount} out of ${users.length} registered users`,
-      totalUsers: users.length,
+      message: `Email sent to ${sentCount} out of ${uniqueUsers.length} registered users`,
+      totalUsers: uniqueUsers.length,
       sentCount,
       failedCount,
       failedEmails: failedEmails.length > 0 ? failedEmails.slice(0, 5) : [], // Show first 5 failed emails
