@@ -1,0 +1,49 @@
+{
+  "CallerReference": "backend-cloudfront-20251223",
+  "Comment": "CloudFront for OFPRS Backend API",
+  "Enabled": true,
+  "Origins": {
+    "Quantity": 1,
+    "Items": [
+      {
+        "Id": "backend-origin",
+        "DomainName": "ofprs-production.eba-jhxevv9p.ap-south-1.elasticbeanstalk.com",
+        "CustomOriginConfig": {
+          "HTTPPort": 80,
+          "HTTPSPort": 443,
+          "OriginProtocolPolicy": "http-only"
+        }
+      }
+    ]
+  },
+  "DefaultCacheBehavior": {
+    "TargetOriginId": "backend-origin",
+    "ViewerProtocolPolicy": "redirect-to-https",
+    "AllowedMethods": {
+      "Quantity": 7,
+      "Items": ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"],
+      "CachedMethods": {
+        "Quantity": 2,
+        "Items": ["GET", "HEAD"]
+      }
+    },
+    "ForwardedValues": {
+      "QueryString": true,
+      "Cookies": {
+        "Forward": "all"
+      },
+      "Headers": {
+        "Quantity": 4,
+        "Items": ["Authorization", "Origin", "Accept", "Content-Type"]
+      }
+    },
+    "MinTTL": 0,
+    "DefaultTTL": 0,
+    "MaxTTL": 0,
+    "Compress": true,
+    "TrustedSigners": {
+      "Enabled": false,
+      "Quantity": 0
+    }
+  }
+}
